@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI肌診断(写真解析) - バンクス</title>
+<style>
+  body { margin:0; padding:0; background:#f2f4f7; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif; }
+  .wrap { max-width:640px; margin:40px auto; padding:32px 24px; background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); }
+  h1 { margin:0 0 8px; font-size:22px; color:#1c2434; }
+  .desc { margin:0 0 20px; color:#555; font-size:14px; line-height:1.7; }
+  .upload-label { display:inline-block; padding:12px 24px; background:rgb(6,147,227); color:#fff; border-radius:9999px; font-weight:700; cursor:pointer; font-size:15px; }
+  #file-input { display:none; }
+  #preview { display:none; margin-bottom:20px; }
+  canvas { max-width:100%; border-radius:12px; display:block; }
+  #result { display:none; }
+  #result h2 { font-size:16px; color:#1c2434; margin:0 0 12px; }
+  .score-row { margin-bottom:14px; }
+  .score-label { display:flex; justify-content:space-between; font-size:13px; color:#333; margin-bottom:4px; }
+  .bar-bg { background:#eee; border-radius:6px; height:10px; overflow:hidden; }
+  .bar-fill { height:100%; width:0%; transition:width .6s; }
+  #comment { font-size:13px; color:#555; line-height:1.7; margin-top:16px; padding:14px; background:#f7f8fa; border-radius:10px; }
+  .disclaimer { font-size:11px; color:#999; margin-top:24px; line-height:1.6; }
+  .back-link { display:inline-block; margin-top:24px; font-size:13px; color:rgb(6,147,227); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI肌診断(写真解析)デモ</h1>
+  <p class="desc">
+    お手持ちの顔写真をアップロードすると、明るさ・赤み・キメの3項目をブラウザ上で簡易解析します。<br>
+    <strong>本デモは医療的な診断ではなく、画像処理による簡易的な参考値です。</strong>
+  </p>
+  <div>
+    <label for="file-input" class="upload-label">写真を選択する</label>
+    <input id="file-input" type="file" accept="image/*">
+  </div>
+  <div id="preview">
+    <canvas id="canvas"></canvas>
+  </div>
+  <div id="result">
+    <h2>解析結果</h2>
+    <div class="score-row">
+      <div class="score-label"><span>明るさ・ツヤ</span><span id="score-bright"></span></div>
+      <div class="bar-bg"><div id="bar-bright" class="bar-fill" style="background:linear-gradient(90deg,#fbbf24,#f59e0b);"></div></div>
+    </div>
+    <div class="score-row">
+      <div class="score-label"><span>赤み</span><span id="score-red"></span></div>
+      <div class="bar-bg"><div id="bar-red" class="bar-fill" style="background:linear-gradient(90deg,#f87171,#dc2626);"></div></div>
+    </div>
+    <div class="score-row">
+      <div class="score-label"><span>キメの均一感</span><span id="score-texture"></span></div>
+      <div class="bar-bg"><div id="bar-texture" class="bar-fill" style="background:linear-gradient(90deg,#60a5fa,#2563eb);"></div></div>
+    </div>
+    <p id="comment"></p>
+  </div>
+  <p class="disclaimer">
+    ※ このツールは画像の明るさ・色味・ピクセルのばらつきを解析する簡易デモです。医療的な肌診断・皮膚科的評価に代わるものではありません。アップロードされた画像はサーバーに送信されず、お使いのブラウザ内でのみ処理されます。
+  </p>
+  <a class="back-link" href="https://vancx.com/esthe-ai-skin-diagnosis/">← 紹介ページに戻る</a>
+</div>
+<script>
+(function(){
+  var fileInput = document.getElementById("file-input");
+  var preview = document.getElementById("preview");
+  var canvas = document.getElementById("canvas");
+  var resultBox = document.getElementById("result");
+
+  fileInput.addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var img = new Image();
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      img.onload = function(){
+        var maxW = 480;
+        var scale = Math.min(1, maxW / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        preview.style.display = "block";
+        analyze(ctx, canvas.width, canvas.height);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function analyze(ctx, w, h){
+    var data = ctx.getImageData(0, 0, w, h).data;
+    var sumLum = 0, sumR = 0, sumG = 0, sumB = 0, n = 0;
+    var lumArr = [];
+    for (var i = 0; i < data.length; i += 4) {
+      var r = data[i], g = data[i+1], b = data[i+2];
+      var lum = 0.299*r + 0.587*g + 0.114*b;
+      sumLum += lum; sumR += r; sumG += g; sumB += b;
+      lumArr.push(lum);
+      n++;
+    }
+    var avgLum = sumLum / n;
+    var avgR = sumR / n, avgG = sumG / n, avgB = sumB / n;
+    var variance = 0;
+    for (var j = 0; j < lumArr.length; j++) variance += Math.pow(lumArr[j] - avgLum, 2);
+    variance = variance / lumArr.length;
+    var stdDev = Math.sqrt(variance);
+
+    var brightScore = Math.max(0, Math.min(100, Math.round((avgLum / 200) * 100)));
+    var rednessRaw = avgR - (avgG + avgB) / 2;
+    var rednessScore = Math.max(0, Math.min(100, Math.round((rednessRaw / 40) * 100)));
+    var textureScore = Math.max(0, Math.min(100, Math.round(100 - (stdDev / 80) * 100)));
+
+    document.getElementById("score-bright").textContent = brightScore + "/100";
+    document.getElementById("score-red").textContent = rednessScore + "/100";
+    document.getElementById("score-texture").textContent = textureScore + "/100";
+    document.getElementById("bar-bright").style.width = brightScore + "%";
+    document.getElementById("bar-red").style.width = rednessScore + "%";
+    document.getElementById("bar-texture").style.width = textureScore + "%";
+
+    var comments = [];
+    if (brightScore < 40) comments.push("明るさ・ツヤはやや控えめな数値です。保湿ケアや十分な睡眠で改善が期待できます。");
+    else if (brightScore > 75) comments.push("明るさ・ツヤは良好な数値です。");
+    else comments.push("明るさ・ツヤは標準的な数値です。");
+
+    if (rednessScore > 60) comments.push("赤みがやや高めに検出されました。刺激の少ないスキンケアがおすすめです。");
+    else comments.push("赤みは目立たない数値でした。");
+
+    if (textureScore < 50) comments.push("キメにばらつきが見られます。ピーリングや保湿ケアで整えるサロンメニューをご検討ください。");
+    else comments.push("キメは比較的均一という結果でした。");
+
+    document.getElementById("comment").textContent = comments.join(" ");
+    resultBox.style.display = "block";
+  }
+})();
+</script>
+</body>
+</html>
