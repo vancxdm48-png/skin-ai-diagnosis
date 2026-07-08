@@ -13,49 +13,58 @@
   #file-input { display:none; }
   #preview { display:none; margin-bottom:20px; }
   canvas { max-width:100%; border-radius:12px; display:block; }
+  #loading { display:none; font-size:13px; color:#666; margin:12px 0; }
   #result { display:none; }
-  #result h2 { font-size:16px; color:#1c2434; margin:0 0 12px; }
-  .score-row { margin-bottom:14px; }
+  #result h2 { font-size:16px; color:#1c2434; margin:0 0 4px; }
+  .overall { display:flex; align-items:center; gap:16px; margin:14px 0 22px; padding:16px; border-radius:12px; background:#f7f8fa; }
+  .grade-badge { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; color:#fff; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.12); }
+  .overall-meta { flex:1; }
+  .overall-score { font-size:22px; font-weight:800; color:#1c2434; }
+  .overall-score small { font-size:13px; font-weight:600; color:#888; }
+  .overall-label { font-size:12px; color:#666; margin-top:2px; }
+  .score-row { margin-bottom:13px; }
   .score-label { display:flex; justify-content:space-between; font-size:13px; color:#333; margin-bottom:4px; }
+  .score-label .val { font-variant-numeric:tabular-nums; font-weight:700; color:#1c2434; }
   .bar-bg { background:#eee; border-radius:6px; height:10px; overflow:hidden; }
-  .bar-fill { height:100%; width:0%; transition:width .6s; }
-  #comment { font-size:13px; color:#555; line-height:1.7; margin-top:16px; padding:14px; background:#f7f8fa; border-radius:10px; }
+  .bar-fill { height:100%; width:0%; transition:width .7s ease; }
+  #comment { font-size:13px; color:#555; line-height:1.8; margin-top:18px; padding:14px; background:#f7f8fa; border-radius:10px; }
+  #comment strong { color:#1c2434; }
+  .warn { font-size:12px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:10px 12px; border-radius:8px; margin:12px 0; display:none; }
   .disclaimer { font-size:11px; color:#999; margin-top:24px; line-height:1.6; }
   .back-link { display:inline-block; margin-top:24px; font-size:13px; color:rgb(6,147,227); text-decoration:none; }
 </style>
 </head>
 <body>
 <div class="wrap">
-      <h1>Skin Check AI肌診断（写真解析）</h1>
+  <h1>Skin Check AI肌診断（写真解析）</h1>
   <p class="desc">
-    お手持ちの顔写真をアップロードすると、明るさ・赤み・キメの3項目をブラウザ上で簡易解析します。<br>
+    お手持ちの顔写真をアップロードすると、肌の状態を <strong>8項目＋総合評価</strong> でブラウザ上で解析します。<br>
+    肌色ピクセルを自動で抽出し、明るさ・赤み・色ムラ・キメ・毛穴・テカリなどを辛口に採点します。<br>
     <strong>本デモは医療的な診断ではなく、画像処理による簡易的な参考値です。</strong>
   </p>
   <div>
     <label for="file-input" class="upload-label">写真を選択する</label>
     <input id="file-input" type="file" accept="image/*">
   </div>
+  <p id="loading">解析中です…</p>
   <div id="preview">
     <canvas id="canvas"></canvas>
   </div>
   <div id="result">
     <h2>解析結果</h2>
-    <div class="score-row">
-      <div class="score-label"><span>明るさ・ツヤ</span><span id="score-bright"></span></div>
-      <div class="bar-bg"><div id="bar-bright" class="bar-fill" style="background:linear-gradient(90deg,#fbbf24,#f59e0b);"></div></div>
+    <div id="skin-warn" class="warn"></div>
+    <div class="overall">
+      <div id="grade-badge" class="grade-badge">–</div>
+      <div class="overall-meta">
+        <div class="overall-score"><span id="overall-score">0</span><small>/100（総合）</small></div>
+        <div id="overall-label" class="overall-label"></div>
+      </div>
     </div>
-    <div class="score-row">
-      <div class="score-label"><span>赤み</span><span id="score-red"></span></div>
-      <div class="bar-bg"><div id="bar-red" class="bar-fill" style="background:linear-gradient(90deg,#f87171,#dc2626);"></div></div>
-    </div>
-    <div class="score-row">
-      <div class="score-label"><span>キメの均一感</span><span id="score-texture"></span></div>
-      <div class="bar-bg"><div id="bar-texture" class="bar-fill" style="background:linear-gradient(90deg,#60a5fa,#2563eb);"></div></div>
-    </div>
+    <div id="scores"></div>
     <p id="comment"></p>
   </div>
   <p class="disclaimer">
-    ※ このツールは画像の明るさ・色味・ピクセルのばらつきを解析する簡易デモです。医療的な肌診断・皮膚科的評価に代わるものではありません。アップロードされた画像はサーバーに送信されず、お使いのブラウザ内でのみ処理されます。
+    ※ このツールは肌色ピクセルを抽出し、明るさ・色味・色ムラ・局所的なピクセルのばらつき（キメ・毛穴）・鏡面反射（テカリ）などを解析する簡易デモです。撮影時の照明・画質・角度によって結果は変動し、医療的な肌診断・皮膚科的評価に代わるものではありません。アップロードされた画像はサーバーに送信されず、お使いのブラウザ内でのみ処理されます。
   </p>
   <a class="back-link" href="https://vancx.com/esthe-ai-skin-diagnosis/">← 紹介ページに戻る</a>
 </div>
@@ -65,70 +74,220 @@
   var preview = document.getElementById("preview");
   var canvas = document.getElementById("canvas");
   var resultBox = document.getElementById("result");
+  var loading = document.getElementById("loading");
+
+  // 診断項目の定義（higher = better になるように quality を返す）
+  var METRICS = [
+    { key:"bright",  label:"明るさ・ツヤ",        color:"linear-gradient(90deg,#fbbf24,#f59e0b)", weight:1.1 },
+    { key:"clarity", label:"透明感・くすみのなさ", color:"linear-gradient(90deg,#a3e635,#65a30d)", weight:1.1 },
+    { key:"redness", label:"赤みの落ち着き",       color:"linear-gradient(90deg,#f87171,#dc2626)", weight:1.0 },
+    { key:"even",    label:"色ムラの少なさ",       color:"linear-gradient(90deg,#c084fc,#7c3aed)", weight:1.2 },
+    { key:"texture", label:"キメの均一感",         color:"linear-gradient(90deg,#60a5fa,#2563eb)", weight:1.2 },
+    { key:"pores",   label:"毛穴の目立ちにくさ",   color:"linear-gradient(90deg,#22d3ee,#0891b2)", weight:1.1 },
+    { key:"oil",     label:"皮脂・テカリバランス", color:"linear-gradient(90deg,#34d399,#059669)", weight:0.9 },
+    { key:"firm",    label:"ハリ・なめらかさ",     color:"linear-gradient(90deg,#fb923c,#ea580c)", weight:1.0 }
+  ];
 
   fileInput.addEventListener("change", function(e){
     var file = e.target.files[0];
     if (!file) return;
+    loading.style.display = "block";
+    resultBox.style.display = "none";
     var img = new Image();
     var reader = new FileReader();
     reader.onload = function(ev){
       img.onload = function(){
         var maxW = 480;
         var scale = Math.min(1, maxW / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
         var ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         preview.style.display = "block";
-        analyze(ctx, canvas.width, canvas.height);
+        setTimeout(function(){ analyze(ctx, canvas.width, canvas.height); }, 30);
       };
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   });
 
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+  function clamp01(v){ return clamp(v, 0, 1); }
+  // 中心 center・幅 width の山型。理想値からの外れを緩やかに減点
+  function gaussian(v, center, width){ var d=(v-center)/width; return Math.exp(-0.5*d*d); }
+  // 辛口変換：品質(0-1) を厳しめカーブで 0-100 点へ
+  function strict(q){ return Math.round(100 * Math.pow(clamp01(q), 1.6)); }
+
   function analyze(ctx, w, h){
     var data = ctx.getImageData(0, 0, w, h).data;
-    var sumLum = 0, sumR = 0, sumG = 0, sumB = 0, n = 0;
-    var lumArr = [];
-    for (var i = 0; i < data.length; i += 4) {
-      var r = data[i], g = data[i+1], b = data[i+2];
-      var lum = 0.299*r + 0.587*g + 0.114*b;
-      sumLum += lum; sumR += r; sumG += g; sumB += b;
-      lumArr.push(lum);
-      n++;
+    var np = w * h;
+    var lum = new Float32Array(np);
+    var crArr = new Float32Array(np);
+    var cbArr = new Float32Array(np);
+    var isSkin = new Uint8Array(np);
+
+    var n = 0;
+    var sumR = 0, sumG = 0, sumB = 0, sumL = 0;
+    var sumCr = 0, sumCb = 0;
+
+    for (var idx = 0; idx < np; idx++) {
+      var p = idx * 4;
+      var r = data[p], g = data[p+1], b = data[p+2];
+      var y  = 0.299*r + 0.587*g + 0.114*b;
+      var cb = 128 - 0.168736*r - 0.331264*g + 0.5*b;
+      var cr = 128 + 0.5*r - 0.418688*g - 0.081312*b;
+      lum[idx] = y; crArr[idx] = cr; cbArr[idx] = cb;
+      // YCbCr による肌色判定（一般的な閾値）
+      if (cb >= 77 && cb <= 127 && cr >= 133 && cr <= 173 && y > 40 && y < 250) {
+        isSkin[idx] = 1;
+        n++;
+        sumR += r; sumG += g; sumB += b; sumL += y;
+        sumCr += cr; sumCb += cb;
+      }
     }
-    var avgLum = sumLum / n;
-    var avgR = sumR / n, avgG = sumG / n, avgB = sumB / n;
-    var variance = 0;
-    for (var j = 0; j < lumArr.length; j++) variance += Math.pow(lumArr[j] - avgLum, 2);
-    variance = variance / lumArr.length;
-    var stdDev = Math.sqrt(variance);
 
-    var brightScore = Math.max(0, Math.min(100, Math.round((avgLum / 200) * 100)));
-    var rednessRaw = avgR - (avgG + avgB) / 2;
-    var rednessScore = Math.max(0, Math.min(100, Math.round((rednessRaw / 40) * 100)));
-    var textureScore = Math.max(0, Math.min(100, Math.round(100 - (stdDev / 80) * 100)));
+    var warnEl = document.getElementById("skin-warn");
+    var skinRatio = n / np;
+    // 肌ピクセルが少なすぎる場合は全体を対象にフォールバック
+    var usingFallback = false;
+    if (n < np * 0.02) {
+      usingFallback = true;
+      n = 0; sumR = sumG = sumB = sumL = sumCr = sumCb = 0;
+      for (var k = 0; k < np; k++) {
+        var pk = k * 4;
+        isSkin[k] = 1; n++;
+        sumR += data[pk]; sumG += data[pk+1]; sumB += data[pk+2];
+        sumL += lum[k]; sumCr += crArr[k]; sumCb += cbArr[k];
+      }
+    }
 
-    document.getElementById("score-bright").textContent = brightScore + "/100";
-    document.getElementById("score-red").textContent = rednessScore + "/100";
-    document.getElementById("score-texture").textContent = textureScore + "/100";
-    document.getElementById("bar-bright").style.width = brightScore + "%";
-    document.getElementById("bar-red").style.width = rednessScore + "%";
-    document.getElementById("bar-texture").style.width = textureScore + "%";
+    var avgR = sumR/n, avgG = sumG/n, avgB = sumB/n, avgL = sumL/n;
+    var avgCr = sumCr/n, avgCb = sumCb/n;
 
-    var comments = [];
-    if (brightScore < 40) comments.push("明るさ・ツヤはやや控えめな数値です。保湿ケアや十分な睡眠で改善が期待できます。");
-    else if (brightScore > 75) comments.push("明るさ・ツヤは良好な数値です。");
-    else comments.push("明るさ・ツヤは標準的な数値です。");
+    // 2パス目：分散・局所勾配・鏡面反射などを肌ピクセル上で集計
+    var varL = 0, varCr = 0, varCb = 0;
+    var sumGrad = 0, gradCount = 0, poreCount = 0, shineCount = 0;
+    for (var yy = 0; yy < h; yy++) {
+      for (var xx = 0; xx < w; xx++) {
+        var i = yy*w + xx;
+        if (!isSkin[i]) continue;
+        var dl = lum[i] - avgL; varL += dl*dl;
+        var dcr = crArr[i] - avgCr; varCr += dcr*dcr;
+        var dcb = cbArr[i] - avgCb; varCb += dcb*dcb;
+        // 局所勾配（右・下との輝度差）でキメ／毛穴を推定
+        if (xx < w-1 && yy < h-1 && isSkin[i+1] && isSkin[i+w]) {
+          var grad = Math.abs(lum[i]-lum[i+1]) + Math.abs(lum[i]-lum[i+w]);
+          sumGrad += grad; gradCount++;
+          if (grad > 26) poreCount++;
+        }
+        // 鏡面反射（テカリ）：非常に明るく彩度の低いピクセル
+        if (lum[i] > 232 && Math.abs(crArr[i]-128) < 22 && Math.abs(cbArr[i]-128) < 22) shineCount++;
+      }
+    }
+    var stdL  = Math.sqrt(varL/n);
+    var stdCr = Math.sqrt(varCr/n);
+    var stdCb = Math.sqrt(varCb/n);
+    var stdChroma = (stdCr + stdCb) / 2;
+    var avgGrad = gradCount ? sumGrad/gradCount : 0;
+    var poreFrac = gradCount ? poreCount/gradCount : 0;
+    var shineFrac = shineCount / n;
 
-    if (rednessScore > 60) comments.push("赤みがやや高めに検出されました。刺激の少ないスキンケアがおすすめです。");
-    else comments.push("赤みは目立たない数値でした。");
+    // ---- 各項目の品質値(0-1、高いほど良好) ----
+    var q = {};
+    // 明るさ・ツヤ：明るすぎ／暗すぎを減点（理想 ~172）
+    q.bright = gaussian(avgL, 172, 46);
+    // 透明感・くすみ：明るさ＋黄み(R+G-2B)の少なさ
+    var yellow = (avgR + avgG)/2 - avgB;
+    q.clarity = clamp01(0.55*clamp01((avgL-70)/120) + 0.45*(1 - clamp01((yellow-28)/55)));
+    // 赤みの落ち着き：肌は本来 R>G>B のため、平均的な暖色は許容し、
+    // 過剰な赤み（赤ら顔・炎症傾向）のみを減点する
+    var redness = avgR - (avgG + avgB)/2;
+    q.redness = 1 - clamp01((redness - 38) / 55);
+    // 色ムラの少なさ：肌色(Cr/Cb)のばらつきが小さいほど良好
+    q.even = 1 - clamp01((stdChroma - 4.5) / 15);
+    // キメの均一感：局所勾配の平均が小さいほど良好
+    q.texture = 1 - clamp01((avgGrad - 4) / 20);
+    // 毛穴の目立ちにくさ：強い局所勾配ピクセルの割合が低いほど良好
+    q.pores = 1 - clamp01((poreFrac - 0.015) / 0.16);
+    // 皮脂・テカリバランス：鏡面反射が少ないほど良好
+    q.oil = 1 - clamp01((shineFrac - 0.006) / 0.09);
+    // ハリ・なめらかさ：輝度分布の粗さ（stdL）と細かなノイズが少ないほど良好
+    q.firm = clamp01(0.6*(1 - clamp01((stdL - 20)/48)) + 0.4*(1 - clamp01((avgGrad - 4)/24)));
 
-    if (textureScore < 50) comments.push("キメにばらつきが見られます。ピーリングや保湿ケアで整えるサロンメニューをご検討ください。");
-    else comments.push("キメは比較的均一という結果でした。");
+    // ---- 辛口採点＆描画 ----
+    var scoresEl = document.getElementById("scores");
+    scoresEl.innerHTML = "";
+    var scores = {};
+    var weightSum = 0, weighted = 0;
+    METRICS.forEach(function(m){
+      var s = strict(q[m.key]);
+      scores[m.key] = s;
+      weighted += s * m.weight;
+      weightSum += m.weight;
 
-    document.getElementById("comment").textContent = comments.join(" ");
+      var row = document.createElement("div");
+      row.className = "score-row";
+      row.innerHTML =
+        '<div class="score-label"><span>' + m.label + '</span><span class="val">' + s + '<small style="color:#999;font-weight:600;"> /100</small></span></div>' +
+        '<div class="bar-bg"><div class="bar-fill" style="background:' + m.color + '"></div></div>';
+      scoresEl.appendChild(row);
+      var fill = row.querySelector(".bar-fill");
+      setTimeout(function(){ fill.style.width = s + "%"; }, 40);
+    });
+
+    var overall = Math.round(weighted / weightSum);
+    document.getElementById("overall-score").textContent = overall;
+
+    // ---- グレード判定（辛口：合格ラインを高めに設定）----
+    var grade, gcolor, glabel;
+    if (overall >= 85)      { grade="S"; gcolor="#7c3aed"; glabel="非常に優れた肌状態です。現状のケアを維持しましょう。"; }
+    else if (overall >= 75) { grade="A"; gcolor="#059669"; glabel="良好な肌状態です。弱点を補えばさらに理想的に。"; }
+    else if (overall >= 65) { grade="B"; gcolor="#0891b2"; glabel="標準的な肌状態です。気になる項目を重点ケアしましょう。"; }
+    else if (overall >= 50) { grade="C"; gcolor="#f59e0b"; glabel="やや課題のある肌状態です。集中的なケアがおすすめです。"; }
+    else                    { grade="D"; gcolor="#dc2626"; glabel="複数の項目で課題が見られます。サロンでの相談を推奨します。"; }
+    var badge = document.getElementById("grade-badge");
+    badge.textContent = grade;
+    badge.style.background = gcolor;
+    document.getElementById("overall-label").textContent = glabel;
+
+    // ---- 警告表示 ----
+    if (usingFallback) {
+      warnEl.style.display = "block";
+      warnEl.textContent = "顔・肌の領域をうまく検出できなかったため、画像全体を対象に解析しました。正面・明るい場所で撮影した顔写真を使うと精度が上がります。";
+    } else if (skinRatio < 0.08) {
+      warnEl.style.display = "block";
+      warnEl.textContent = "肌の写る範囲が小さいため、精度が下がっている可能性があります。顔が大きく写った写真がおすすめです。";
+    } else {
+      warnEl.style.display = "none";
+    }
+
+    // ---- コメント（低スコア項目を優先してアドバイス）----
+    var advice = {
+      bright:  "明るさ・ツヤが控えめです。保湿と十分な睡眠、明るい場所での撮影で改善が期待できます。",
+      clarity: "くすみ傾向がみられます。角質ケアやビタミンC系のケアで透明感アップを狙えます。",
+      redness: "赤みがやや強めに検出されました。低刺激のスキンケアと紫外線対策がおすすめです。",
+      even:    "色ムラがやや目立ちます。美白ケアや均一な保湿でトーンを整えましょう。",
+      texture: "キメの乱れが見られます。保湿とやさしい洗顔でキメを整えるケアが有効です。",
+      pores:   "毛穴が目立ちやすい傾向です。毛穴ケアメニューや引き締めケアをご検討ください。",
+      oil:     "テカリ（皮脂）がやや多めです。皮脂バランスを整える保湿・クレンジングがおすすめです。",
+      firm:    "肌表面のなめらかさに課題がみられます。ハリ・弾力ケアのサロンメニューが有効です。"
+    };
+    var sorted = METRICS.slice().sort(function(a,b){ return scores[a.key]-scores[b.key]; });
+    var strongest = sorted[sorted.length-1];
+    var weak = sorted.filter(function(m){ return scores[m.key] < 65; }).slice(0,3);
+
+    var parts = [];
+    parts.push("<strong>総合評価：" + grade + "（" + overall + "/100）</strong>");
+    parts.push("最も良い項目は「" + strongest.label + "（" + scores[strongest.key] + "点）」でした。");
+    if (weak.length === 0) {
+      parts.push("大きな弱点はなく、全体的にバランスの取れた肌状態です。");
+    } else {
+      parts.push("特にケアしたい項目は次の通りです：");
+      weak.forEach(function(m){ parts.push("・「" + m.label + "（" + scores[m.key] + "点）」… " + advice[m.key]); });
+    }
+    document.getElementById("comment").innerHTML = parts.join("<br>");
+
+    loading.style.display = "none";
     resultBox.style.display = "block";
   }
 })();
